@@ -28,7 +28,7 @@ async def test_outbound_payload(
     publish_and_record_fixture: RecordedEventFixture,  # noqa: F811
 ):
     """ """
-    time.sleep(60)
+    time.sleep(30)
 
     payload = publish_and_record_fixture.payload
     checkable_fields = publish_and_record_fixture.checkable_fields
