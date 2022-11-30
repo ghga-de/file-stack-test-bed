@@ -39,6 +39,8 @@ services:
 
   ekss:
     image: ghga/encryption-key-store-service:main
+    depends_on:
+      - vault
     environment:
       EKSS_HOST: 0.0.0.0
       EKSS_PORT: 80
