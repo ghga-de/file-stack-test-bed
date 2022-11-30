@@ -34,7 +34,7 @@ PART_SIZE = 8 * 1024**2
 
 @dataclass
 class CheckablePayloadFields:
-    """Fields from recorded event that hold values that can an should be checked"""
+    """Fields from recorded event that hold values that can and should be checked"""
 
     file_id: str
     part_size: int
