@@ -22,10 +22,16 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
+          docker exec \
+            --workdir /workspace \
+            -it devcontainer-app-1 \
+            sudo pip install -r requirements.txt
 
       - name: Run pytest
         run: |
-          pytest \
+          docker exec \
+            --workdir /workspace \
+            -it devcontainer-app-1 \
+            pytest \
             --cov="${REL_SRC_DIR_PATH}" \
             --cov-report=xml

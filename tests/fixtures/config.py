@@ -15,7 +15,7 @@
 """App config for tests and interaction with the Interrogation Room Service"""
 
 from hexkit.config import config_from_yaml  # type: ignore
-from pydantic import BaseSettings, Field, SecretStr  # type: ignore
+from pydantic import BaseSettings, SecretStr  # type: ignore
 
 
 @config_from_yaml(prefix="tb")
@@ -25,15 +25,15 @@ class Config(BaseSettings):
     Defaults set for not running inside devcontainer.
     """
 
-    s3_endpoint_url: str = Field("http://localstack:4566")
-    s3_access_key_id: str = Field("testbed-key")
-    s3_secret_access_key: SecretStr = Field("testbed-secret")
-    inbox_bucket: str = Field("inbox")
-    object_id: str = Field("testbed-event-object")
-    submitter_pubkey: str = Field("ZZ7Ss44DXhAwObVkqHaKoF2eyxK5rMHDcQ1R605iCQM=")
-    service_instance_id: str = Field("testbed-app-1")
-    kafka_servers: list[str] = Field(["kafka:9092"])
-    service_name: str = Field("testbed_kafka")
+    s3_endpoint_url: str
+    s3_access_key_id: str
+    s3_secret_access_key: SecretStr
+    inbox_bucket: str
+    object_id: str
+    submitter_pubkey: str
+    service_instance_id: str
+    kafka_servers: list[str]
+    service_name: str
 
 
 CONFIG = Config()
