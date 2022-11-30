@@ -15,25 +15,20 @@
 """App config for tests and interaction with the Interrogation Room Service"""
 
 from hexkit.config import config_from_yaml  # type: ignore
-from pydantic import BaseSettings, SecretStr  # type: ignore
+from hexkit.providers.akafka import KafkaConfig  # type: ignore
+from hexkit.providers.s3 import S3Config  # type: ignore
 
 
 @config_from_yaml(prefix="tb")
-class Config(BaseSettings):
+class Config(S3Config, KafkaConfig):
     """
     Custom Config class for the test app.
     Defaults set for not running inside devcontainer.
     """
 
-    s3_endpoint_url: str
-    s3_access_key_id: str
-    s3_secret_access_key: SecretStr
     inbox_bucket: str
     object_id: str
     submitter_pubkey: str
-    service_instance_id: str
-    kafka_servers: list[str]
-    service_name: str
 
 
 CONFIG = Config()

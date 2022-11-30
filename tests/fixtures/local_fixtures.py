@@ -15,6 +15,7 @@
 
 import hashlib
 import math
+import time
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -141,6 +142,7 @@ async def publish_and_record_fixture(
                 key=key,
                 topic=topic,
             )
+        time.sleep(10)
 
     assert len(event_recorder.recorded_events) == 1
 
