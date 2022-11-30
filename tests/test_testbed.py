@@ -31,4 +31,4 @@ async def test_outbound_payload(
 
     assert "upload_date" in payload.keys()
     assert payload["file_id"] == checkable_fields.file_id
-    assert payload["cause"] == "The crypt4GH envelope is either malformed or missing."
+    assert payload["reason"] == "The crypt4GH envelope is either malformed or missing."

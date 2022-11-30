@@ -48,8 +48,7 @@ services:
       EKSS_SERVER_PRIVATE_KEY: YzRnaC12MQAEbm9uZQAEbm9uZQAgG8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
       EKSS_SERVER_PUBLIC_KEY: qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=
   irs:
-    # image: ghga/interrogation-room-service:main
-    image: irs:test
+    image: ghga/interrogation-room-service:main
     depends_on:
       - kafka
     restart: on-failure

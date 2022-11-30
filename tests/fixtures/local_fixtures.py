@@ -133,9 +133,9 @@ async def publish_and_record_fixture(
         kafka_servers=CONFIG.kafka_servers, topic="file_interrogation"
     ) as event_recorder:
         async with KafkaEventPublisher.construct(config=CONFIG) as publisher:
-            type_ = "ucs"
+            type_ = "file_upload_received"
             key = CONFIG.object_id
-            topic = "file_upload_received"
+            topic = "file_uploads"
             await publisher.publish(
                 payload=populated_bucket_fixture.dict(),
                 type_=type_,
@@ -152,6 +152,8 @@ async def publish_and_record_fixture(
         checkable_fields=CheckablePayloadFields(
             file_id=CONFIG.object_id,
             part_size=PART_SIZE,
-            content_checksum=populated_bucket_fixture.dict()["sha256_checksum"],
+            content_checksum=populated_bucket_fixture.dict()[
+                "expected_decrypted_sha256"
+            ],
         ),
     )
