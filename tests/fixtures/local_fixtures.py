@@ -15,7 +15,6 @@
 
 import hashlib
 import math
-import time
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -28,14 +27,14 @@ from hexkit.providers.akafka import KafkaEventPublisher  # type: ignore
 from hexkit.providers.akafka.testutils import EventRecorder  # type: ignore
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 
-from src.config import CONFIG
+from tests.fixtures.config import CONFIG
 
 PART_SIZE = 8 * 1024**2
 
 
 @dataclass
 class CheckablePayloadFields:
-    """ """
+    """Fields from recorded event that hold values that can an should be checked"""
 
     file_id: str
     part_size: int
@@ -44,7 +43,7 @@ class CheckablePayloadFields:
 
 @dataclass
 class RecordedEventFixture:
-    """ """
+    """Payload sent and fields that can be checked for equality"""
 
     payload: JsonObject
     checkable_fields: CheckablePayloadFields
@@ -52,7 +51,7 @@ class RecordedEventFixture:
 
 @pytest_asyncio.fixture
 async def local_s3_fixture() -> S3ObjectStorage:
-    """ """
+    """Clean bucket and object"""
     config = S3Config(
         s3_endpoint_url=CONFIG.s3_endpoint_url,
         s3_access_key_id=CONFIG.s3_access_key_id,
@@ -74,7 +73,7 @@ async def local_s3_fixture() -> S3ObjectStorage:
 async def populated_bucket_fixture(
     local_s3_fixture: S3ObjectStorage,
 ) -> event_schemas.FileUploadReceived:
-    """ """
+    """Generate test file and prepare event"""
     file_size = 20 * 1024**2
 
     num_parts = math.ceil(file_size / PART_SIZE)
@@ -127,7 +126,7 @@ async def populated_bucket_fixture(
 async def publish_and_record_fixture(
     populated_bucket_fixture: event_schemas.FileUploadReceived,
 ):
-    """ """
+    """Publish incoming event, record outgoing response event"""
 
     async with EventRecorder(
         kafka_servers=CONFIG.kafka_servers, topic="file_interrogation"
@@ -142,9 +141,7 @@ async def publish_and_record_fixture(
                 key=key,
                 topic=topic,
             )
-        time.sleep(20)
 
-    print(event_recorder.recorded_events)
     assert len(event_recorder.recorded_events) == 1
 
     return RecordedEventFixture(
