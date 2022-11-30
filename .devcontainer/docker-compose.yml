@@ -89,12 +89,12 @@ services:
       AWS_ACCESS_KEY_ID: testbed-key
       AWS_SECRET_ACCESS_KEY: testbed-secret
       USE_SSL: "false"
-      DATA_DIR: /tmp/localstack/data
+      DATA_DIR: /var/lib/localstack/data
       DEBUG: 1
     volumes:
       - type: volume
         source: s3_fs
-        target: /tmp/localstack
+        target: /var/lib/localstack
         volume:
           nocopy: true
 
