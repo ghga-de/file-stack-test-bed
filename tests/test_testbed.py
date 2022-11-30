@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 import pytest  # type: ignore
 
 from tests.fixtures.local_fixtures import local_s3_fixture  # noqa: F401
@@ -26,6 +28,8 @@ async def test_outbound_payload(
     publish_and_record_fixture: RecordedEventFixture,  # noqa: F811
 ):
     """ """
+    time.sleep(60)
+
     payload = publish_and_record_fixture.payload
     checkable_fields = publish_and_record_fixture.checkable_fields
 

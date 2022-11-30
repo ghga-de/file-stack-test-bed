@@ -20,7 +20,10 @@ from pydantic import BaseSettings, Field, SecretStr  # type: ignore
 
 @config_from_yaml(prefix="tb")
 class Config(BaseSettings):
-    """CUstom Config class for the test app"""
+    """
+    Custom Config class for the test app.
+    Defaults set for not running inside devcontainer.
+    """
 
     s3_endpoint_url: str = Field("http://localstack:4566")
     s3_access_key_id: str = Field("testbed-key")
