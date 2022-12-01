@@ -20,7 +20,7 @@ RUN if [ "${INSTALL_NODE}" = "true" ]; then su vscode -c "umask 0002 && . /usr/l
 # Install additional OS packages.
 RUN apt update \
     && export DEBIAN_FRONTEND=noninteractive \
-    && apt -y install --no-install-recommends postgresql-client-common
+    && apt -y install --no-install-recommends iputils-ping nmap
 
 # Copy install and launcher script to bin:
 COPY ./dev_install /bin
