@@ -13,7 +13,8 @@ services:
         USER_GID: 1000
 
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
 
     init: true
     privileged: true
@@ -52,8 +53,8 @@ services:
   irs:
     image: ghga/interrogation-room-service:0.0.0-12-00aed53-main
     depends_on:
-      - kafka
-    restart: on-failure
+      kafka:
+        condition: service_healthy
 
     environment:
       IRS_S3_ENDPOINT_URL: http://localstack:4566
@@ -69,6 +70,12 @@ services:
     restart: always
     depends_on:
       - zookeeper
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "9092" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 100s
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
