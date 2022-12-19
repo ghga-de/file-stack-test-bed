@@ -83,6 +83,60 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: dcs_testbed
       MONGO_INITDB_ROOT_PASSWORD: dcs_key
+
+  ucs:
+    image: ghga/upload-controller-service:0.3.0-11-g444f925-main
+    depends_on:
+      - ucs_db
+    environment:
+      UCS_FILE_METADATA_EVENT_TOPIC: file_uploads
+      UCS_FILE_METADATA_EVENT_TYPE: file_upload_received
+      UCS_UPLOAD_ACCEPTED_EVENT_TOPIC: file_ingestion
+      UCS_UPLOAD_ACCEPTED_EVENT_TYPE: upload_accepted
+      UCS_SERVICE_INSTANCE_ID: 1
+      UCS_KAFKA_SERVERS: '["kafka:9092"]'
+      UCS_DB_CONNECTION_STR: mongodb://ucs_testbed:ucs_key@ucs_db
+      UCS_DB_NAME: ucs
+      UCS_S3_ENDPOINT_URL: http://localstack:4566
+      UCS_S3_ACCESS_KEY_ID: testbed-key
+      UCS_S3_SECRET_ACCESS_KEY: testbed-secret
+    command: "consume-events || run-rest"
+
+  dcs:
+    image: ghga/download-controller-service:0.4.0-2-gfad4e55-main
+    depends_on:
+      - dcs_db
+    environment:
+      DCS_FILES_TO_REGISTER_TOPIC: file_registry
+      DCS_FILES_TO_REGISTER_TYPE: files_to_register
+      DCS_SERVICE_INSTANCE_ID: 1
+      DCS_KAFKA_SERVERS: '["kafka:9092"]'
+      DCS_DB_CONNECTION_STR: mongodb://dcs_testbed:dcs_key@dcs_db
+      DCS_DB_NAME: dcs
+      DCS_OUTBOX_BUCKET: outbox
+      DCS_DRS_SERVER_URI: drs://localhost:8080/
+      DCS_S3_ENDPOINT_URL: http://localstack:4566
+      DCS_S3_ACCESS_KEY_ID: testbed-key
+      DCS_S3_SECRET_ACCESS_KEY: testbed-secret
+    command: "consume-events || run-rest"
+  ifrs:
+    image: ghga/internal-file-registry-service:0.3.0-3-g55d83f5-main
+    depends_on:
+      - ifrs_db
+    environment:
+      IFRS_FILES_TO_REGISTER_TOPIC: file_ingestion
+      IFRS_FILES_TO_REGISTER_TYPE: files_to_register
+      IFRS_OUTBOX_BUCKET: outbox
+      IFRS_INBOX_BUCKET: inbox
+      IFRS_PERMANENT_BUCKET: permanent
+      IFRS_SERVICE_INSTANCE_ID: 1
+      IFRS_KAFKA_SERVERS: '["kafka:9092"]'
+      IFRS_DB_CONNECTION_STR: mongodb://ifrs_testbed:ifrs_key@ifrs_db
+      IFRS_DB_NAME: ifrs
+      IFRS_S3_ENDPOINT_URL: http://localstack:4566
+      IFRS_S3_ACCESS_KEY_ID: testbed-key
+      IFRS_S3_SECRET_ACCESS_KEY: testbed-secret
+
   kafka:
     image: confluentinc/cp-kafka:7.3.0
     restart: always
