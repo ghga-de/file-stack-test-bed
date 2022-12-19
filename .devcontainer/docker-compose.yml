@@ -65,6 +65,24 @@ services:
       IRS_INBOX_BUCKET: inbox
       IRS_EKS_URL: http://ekss/secrets
 
+  ucs_db:
+    image: mongo:latest
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ucs_testbed
+      MONGO_INITDB_ROOT_PASSWORD: ucs_key
+  ifrs_db:
+    image: mongo:latest
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ifrs_testbed
+      MONGO_INITDB_ROOT_PASSWORD: ifrs_key
+  dcs_db:
+    image: mongo:latest
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: dcs_testbed
+      MONGO_INITDB_ROOT_PASSWORD: dcs_key
   kafka:
     image: confluentinc/cp-kafka:7.3.0
     restart: always
