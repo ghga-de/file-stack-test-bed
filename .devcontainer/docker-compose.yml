@@ -28,6 +28,9 @@ services:
     user: vscode
 
     environment:
+      GHGA_CONNECTOR_UPLOAD_API: http://ucs_rest:8080
+      TB_FILE_METADATA_EVENT_TOPIC: metadata
+      TB_FILE_METADATA_EVENT_TYPE: metadata_upsert
       TB_S3_ENDPOINT_URL: http://localstack:4566
       TB_S3_ACCESS_KEY_ID: testbed-key
       TB_S3_SECRET_ACCESS_KEY: testbed-secret
@@ -84,7 +87,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: dcs_testbed
       MONGO_INITDB_ROOT_PASSWORD: dcs_key
 
-  ucs_consume:
+  ucs_consumer:
     image: ghga/upload-controller-service:0.3.0-11-g444f925-main
     depends_on:
       kafka:
@@ -92,11 +95,11 @@ services:
       ucs_db:
         condition: service_started
     environment:
-      UCS_FILE_METADATA_EVENT_TOPIC: file_uploads
-      UCS_FILE_METADATA_EVENT_TYPE: file_upload_received
+      UCS_FILE_METADATA_EVENT_TOPIC: metadata
+      UCS_FILE_METADATA_EVENT_TYPE: metadata_upsert
       UCS_UPLOAD_ACCEPTED_EVENT_TOPIC: file_ingestion
       UCS_UPLOAD_ACCEPTED_EVENT_TYPE: upload_accepted
-      UCS_SERVICE_INSTANCE_ID: 1
+      UCS_SERVICE_INSTANCE_ID: ucs-consumer-1
       UCS_KAFKA_SERVERS: '["kafka:9092"]'
       UCS_DB_CONNECTION_STR: mongodb://ucs_testbed:ucs_key@ucs_db
       UCS_DB_NAME: ucs
@@ -112,12 +115,15 @@ services:
         condition: service_healthy
       ucs_db:
         condition: service_started
+      ucs_consumer:
+        condition: service_started
     environment:
-      UCS_FILE_METADATA_EVENT_TOPIC: file_uploads
-      UCS_FILE_METADATA_EVENT_TYPE: file_upload_received
+      UCS_HOST: 0.0.0.0
+      UCS_FILE_METADATA_EVENT_TOPIC: metadata
+      UCS_FILE_METADATA_EVENT_TYPE: metadata_upsert
       UCS_UPLOAD_ACCEPTED_EVENT_TOPIC: file_ingestion
       UCS_UPLOAD_ACCEPTED_EVENT_TYPE: upload_accepted
-      UCS_SERVICE_INSTANCE_ID: 1
+      UCS_SERVICE_INSTANCE_ID: ucs-rest-1
       UCS_KAFKA_SERVERS: '["kafka:9092"]'
       UCS_DB_CONNECTION_STR: mongodb://ucs_testbed:ucs_key@ucs_db
       UCS_DB_NAME: ucs
@@ -136,7 +142,7 @@ services:
     environment:
       DCS_FILES_TO_REGISTER_TOPIC: file_registry
       DCS_FILES_TO_REGISTER_TYPE: files_to_register
-      DCS_SERVICE_INSTANCE_ID: 1
+      DCS_SERVICE_INSTANCE_ID: dcs-consumer-1
       DCS_KAFKA_SERVERS: '["kafka:9092"]'
       DCS_DB_CONNECTION_STR: mongodb://dcs_testbed:dcs_key@dcs_db
       DCS_DB_NAME: dcs
@@ -154,10 +160,13 @@ services:
         condition: service_healthy
       dcs_db:
         condition: service_started
+      dcs_consumer:
+        condition: service_started
     environment:
+      DCS_HOST: 0.0.0.0
       DCS_FILES_TO_REGISTER_TOPIC: file_registry
       DCS_FILES_TO_REGISTER_TYPE: files_to_register
-      DCS_SERVICE_INSTANCE_ID: 1
+      DCS_SERVICE_INSTANCE_ID: dcs-rest-1
       DCS_KAFKA_SERVERS: '["kafka:9092"]'
       DCS_DB_CONNECTION_STR: mongodb://dcs_testbed:dcs_key@dcs_db
       DCS_DB_NAME: dcs
@@ -180,7 +189,7 @@ services:
       IFRS_OUTBOX_BUCKET: outbox
       IFRS_INBOX_BUCKET: inbox
       IFRS_PERMANENT_BUCKET: permanent
-      IFRS_SERVICE_INSTANCE_ID: 1
+      IFRS_SERVICE_INSTANCE_ID: ifrs-1
       IFRS_KAFKA_SERVERS: '["kafka:9092"]'
       IFRS_DB_CONNECTION_STR: mongodb://ifrs_testbed:ifrs_key@ifrs_db
       IFRS_DB_NAME: ifrs
@@ -207,6 +216,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    ports:
+      - 9092:9092
 
   localstack:
     image: localstack/localstack:latest
