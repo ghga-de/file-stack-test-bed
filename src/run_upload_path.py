@@ -16,6 +16,8 @@
 
 import asyncio
 import hashlib
+import os
+import time
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -47,7 +49,7 @@ CONFIG = Config()
 
 async def run_upload():
     """main"""
-    file_id = "test1"
+    file_id = os.urandom(16).hex()
     file_size = 20 * 1024**2
     file_data, file_size, checksum = generate_file(file_size=file_size)
     await populate_metadata(
@@ -95,6 +97,7 @@ async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256:
             key=key,
             topic=topic,
         )
+        time.sleep(15)
 
 
 def upload_file(file_id: str, file_path: str):
