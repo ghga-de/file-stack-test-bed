@@ -97,7 +97,7 @@ async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256:
             key=key,
             topic=topic,
         )
-        time.sleep(10)
+    time.sleep(10)
 
 
 def upload_file(file_id: str, file_path: str):
