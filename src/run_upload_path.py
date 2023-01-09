@@ -66,6 +66,7 @@ def generate_file(file_size: int):
     """Generate encrypted test file"""
 
     with big_temp_file(size=file_size) as random_data:
+        random_data.seek(0)
         data = random_data.read()
         size = len(data)
         checksum = hashlib.sha256(data).hexdigest()
@@ -90,14 +91,13 @@ async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256:
         type_ = CONFIG.file_metadata_event_type
         key = file_id
         topic = CONFIG.file_metadata_event_topic
-        print(topic, type_, key)
         await publisher.publish(
             payload=metadata_upserted.dict(),
             type_=type_,
             key=key,
             topic=topic,
         )
-        time.sleep(15)
+        time.sleep(10)
 
 
 def upload_file(file_id: str, file_path: str):

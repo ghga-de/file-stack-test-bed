@@ -111,7 +111,7 @@ services:
     command: "consume-events"
 
   ucs_rest:
-    image: ghga/upload-controller-service:0.3.0-11-g444f925-main
+    image: ghga/upload-controller-service:0.3.0-12-ge34429d-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -243,7 +243,6 @@ services:
         volume:
           nocopy: true
       - ./init-scripts:/docker-entrypoint-initaws.d
-
   vault:
     image: hashicorp/vault:1.12
     ports:
