@@ -32,6 +32,8 @@ from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).parent.parent
 
+FILE_NAME = os.urandom(16).hex()
+
 
 @config_from_yaml(prefix="tb")
 class Config(S3Config, KafkaConfig):
@@ -50,13 +52,39 @@ class Config(S3Config, KafkaConfig):
     vault_token: str
 
 
-class IFRSQueryModel(BaseModel):
+CONFIG = Config()
+
+
+class DBConfig:
+    """TODO: Could be an enum"""
+
+    dcs_config = MongoDbConfig(
+        db_connection_str=CONFIG.db_connection_str, db_name="dcs"
+    )
+    ifrs_config = MongoDbConfig(
+        db_connection_str=CONFIG.db_connection_str, db_name="ifrs"
+    )
+    irs_config = MongoDbConfig(
+        db_connection_str=CONFIG.db_connection_str, db_name="irs"
+    )
+    ucs_config = MongoDbConfig(
+        db_connection_str=CONFIG.db_connection_str, db_name="ucs"
+    )
+
+
+class UploadRejectedQuery(BaseModel):
+    """Query model for file upload rejection"""
+
+    id_: str
+    file_id: str
+    status: str
+
+
+class UCSMetadataQuery(BaseModel):
     """Query model for IFRS validation"""
 
     file_id: str
-
-
-CONFIG = Config()
+    file_name: str
 
 
 async def upload_and_verify():
@@ -97,7 +125,7 @@ async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256:
     metadata_files = [
         event_schemas.MetadataSubmissionFiles(
             file_id=file_id,
-            file_name="blue_milk.tar.gz",
+            file_name=FILE_NAME,
             decrypted_size=decrypted_size,
             decrypted_sha256=decrypted_sha256,
         ),
@@ -131,7 +159,9 @@ def upload_file(file_id: str, file_path: str):
 async def check_state(file_id: str):
     """TODO"""
     await check_s3(file_id=file_id)
-    await check_ifrs(file_id=file_id)
+    internal_id = await check_metadata()
+    await check_rejected(internal_id=internal_id)
+    # await check_ifrs()
     await check_dcs_db()
     await check_secret()
 
@@ -146,16 +176,33 @@ async def check_s3(file_id: str):
         raise ValueError("Object missing in inbox")
 
 
-async def check_ifrs(file_id: str):
+async def check_metadata():
     """TODO"""
-    config = MongoDbConfig(
-        db_connection_str=CONFIG.db_connection_str, db_name="mongo_db"
+    dao_factory = MongoDbDaoFactory(config=DBConfig.ucs_config)
+    metadata_dao = await dao_factory.get_dao(
+        name="file_metadata", dto_model=UCSMetadataQuery, id_field="file_id"
     )
-    dao_factory = MongoDbDaoFactory(config=config)
-    ifrs_dao = await dao_factory.get_dao(
-        name="ifrs", dto_model=IFRSQueryModel, id_field="file_id"
+
+    result = await metadata_dao.find_one(mapping={"file_name": FILE_NAME})
+
+    # assert result
+    internal_id = result.file_id
+
+    return internal_id
+
+
+async def check_rejected(internal_id: str):
+    """TODO"""
+    time.sleep(20)
+    dao_factory = MongoDbDaoFactory(config=DBConfig.ucs_config)
+    upload_attempt_dao = await dao_factory.get_dao(
+        name="upload_attempts", dto_model=UploadRejectedQuery, id_field="id_"
     )
-    await ifrs_dao.get_by_id(id_=file_id)
+    result = await upload_attempt_dao.find_one(mapping={"file_id": internal_id})
+
+    print(result)
+    # assert result
+    # assert result.status == "rejected"
 
 
 async def check_dcs_db():
