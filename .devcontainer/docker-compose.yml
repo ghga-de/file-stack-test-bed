@@ -58,7 +58,7 @@ services:
       EKSS_SERVER_PRIVATE_KEY: YzRnaC12MQAEbm9uZQAEbm9uZQAgG8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
       EKSS_SERVER_PUBLIC_KEY: qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=
   irs:
-    image: ghga/interrogation-room-service:0.0.0-15-3f1f495-main
+    image: ghga/interrogation-room-service:0.0.0-16-4646c1a-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -88,7 +88,7 @@ services:
       - 44441:27017
 
   ucs_consumer:
-    image: ghga/upload-controller-service:0.3.0-14-g663b4b7-main
+    image: ghga/upload-controller-service:0.3.0-15-ge892569-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -114,7 +114,7 @@ services:
     command: "consume-events"
 
   ucs_rest:
-    image: ghga/upload-controller-service:0.3.0-14-g663b4b7-main
+    image: ghga/upload-controller-service:0.3.0-15-ge892569-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -142,7 +142,7 @@ services:
     command: "run-rest"
 
   dcs_consumer:
-    image: ghga/download-controller-service:0.4.0-7-geb143c8-main
+    image: ghga/download-controller-service:0.4.0-8-g667a951-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -170,7 +170,7 @@ services:
     command: "consume-events"
 
   dcs_rest:
-    image: ghga/download-controller-service:0.4.0-7-geb143c8-main
+    image: ghga/download-controller-service:0.4.0-8-g667a951-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -207,8 +207,14 @@ services:
       mongo_db:
         condition: service_started
     environment:
+      IFRS_FILE_REGISTERED_EVENT_TOPIC: internal_file_registry
+      IFRS_FILE_REGISTERED_EVENT_TYPE: file_registered
+      IFRS_FILE_STAGED_EVENT_TOPIC: internal_file_registry
+      IFRS_FILE_STAGED_EVENT_TYPE: file_staged_for_download
       IFRS_FILES_TO_REGISTER_TOPIC: file_interrogation
       IFRS_FILES_TO_REGISTER_TYPE: file_interrogation_success
+      IFRS_FILES_TO_STAGE_TOPIC: file_downloads
+      IFRS_FILES_TO_STAGE_TYPE: file_Stage_requested
       IFRS_OUTBOX_BUCKET: outbox
       IFRS_INBOX_BUCKET: inbox
       IFRS_PERMANENT_BUCKET: permanent
