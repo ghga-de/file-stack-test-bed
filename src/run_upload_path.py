@@ -26,7 +26,9 @@ from ghga_event_schemas import pydantic_ as event_schemas
 from ghga_service_chassis_lib.utils import big_temp_file
 from hexkit.config import config_from_yaml
 from hexkit.providers.akafka import KafkaConfig, KafkaEventPublisher
-from hexkit.providers.s3 import S3Config
+from hexkit.providers.mongodb import MongoDbConfig, MongoDbDaoFactory
+from hexkit.providers.s3 import S3Config, S3ObjectStorage
+from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -38,13 +40,29 @@ class Config(S3Config, KafkaConfig):
     Defaults set for not running inside devcontainer.
     """
 
+    db_connection_str: str
     file_metadata_event_topic: str
     file_metadata_event_type: str
     inbox_bucket: str
     submitter_pubkey: str
+    vault_host: str
+    vault_port: int
+    vault_token: str
+
+
+class IFRSQueryModel(BaseModel):
+    """Query model for IFRS validation"""
+
+    file_id: str
 
 
 CONFIG = Config()
+
+
+async def upload_and_verify():
+    """TODO"""
+    file_id = await run_upload()
+    await check_state(file_id=file_id)
 
 
 async def run_upload():
@@ -60,6 +78,7 @@ async def run_upload():
         tmp_file.write(file_data)
         tmp_file.seek(0)
         upload_file(file_id=file_id, file_path=tmp_file.name)
+    return file_id
 
 
 def generate_file(file_size: int):
@@ -97,7 +116,7 @@ async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256:
             key=key,
             topic=topic,
         )
-    time.sleep(10)
+    time.sleep(15)
 
 
 def upload_file(file_id: str, file_path: str):
@@ -109,5 +128,43 @@ def upload_file(file_id: str, file_path: str):
     )
 
 
+async def check_state(file_id: str):
+    """TODO"""
+    await check_s3(file_id=file_id)
+    await check_ifrs(file_id=file_id)
+    await check_dcs_db()
+    await check_secret()
+
+
+async def check_s3(file_id: str):
+    """TODO"""
+    storage = S3ObjectStorage(config=CONFIG)
+    object_exists = await storage.does_object_exist(
+        bucket_id=CONFIG.inbox_bucket, object_id=file_id
+    )
+    if not object_exists:
+        raise ValueError("Object missing in inbox")
+
+
+async def check_ifrs(file_id: str):
+    """TODO"""
+    config = MongoDbConfig(
+        db_connection_str=CONFIG.db_connection_str, db_name="mongo_db"
+    )
+    dao_factory = MongoDbDaoFactory(config=config)
+    ifrs_dao = await dao_factory.get_dao(
+        name="ifrs", dto_model=IFRSQueryModel, id_field="file_id"
+    )
+    await ifrs_dao.get_by_id(id_=file_id)
+
+
+async def check_dcs_db():
+    """TODO"""
+
+
+async def check_secret():
+    """TODO"""
+
+
 if __name__ == "__main__":
-    asyncio.run(run_upload())
+    asyncio.run(upload_and_verify())

@@ -29,6 +29,7 @@ services:
 
     environment:
       GHGA_CONNECTOR_UPLOAD_API: http://ucs_rest:8080
+      TB_DB_CONNECTION_STR: mongodb://testbed_user:testbed_key@mongo_db
       TB_FILE_METADATA_EVENT_TOPIC: metadata
       TB_FILE_METADATA_EVENT_TYPE: metadata_upsert
       TB_S3_ENDPOINT_URL: http://localstack:4566
@@ -40,9 +41,12 @@ services:
       TB_SERVICE_INSTANCE_ID: testbed-app-1
       TB_KAFKA_SERVERS: '["kafka:9092"]'
       TB_SERVICE_NAME: testbed_kafka
+      TB_VAULT_HOST: vault
+      TB_VAULT_PORT: 8200
+      TB_VAULT_TOKEN: dev-token
 
   ekss:
-    image: ghga/encryption-key-store-service:0.0.0-13-27b36d0-main
+    image: ghga/encryption-key-store-service:0.0.0-16-d8ccd14-main
     depends_on:
       - vault
     environment:
@@ -54,7 +58,7 @@ services:
       EKSS_SERVER_PRIVATE_KEY: YzRnaC12MQAEbm9uZQAEbm9uZQAgG8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
       EKSS_SERVER_PUBLIC_KEY: qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=
   irs:
-    image: ghga/interrogation-room-service:0.0.0-12-00aed53-main
+    image: ghga/interrogation-room-service:0.0.0-15-3f1f495-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -68,6 +72,11 @@ services:
       IRS_KAFKA_SERVERS: '["kafka:9092"]'
       IRS_INBOX_BUCKET: inbox
       IRS_EKS_URL: http://ekss/secrets
+      IRS_INTERROGATION_TOPIC: file_interrogation
+      IRS_INTERROGATION_SUCCESS_TYPE: file_validation_success
+      IRS_INTERROGATION_FAILURE_TYPE: file_validation_failure
+      IRS_UPLOAD_RECEIVED_EVENT_TOPIC: file_uploads
+      IRS_UPLOAD_RECEIVED_EVENT_TYPE: file_upload_received
 
   mongo_db:
     image: mongo:latest
@@ -75,9 +84,11 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: testbed_user
       MONGO_INITDB_ROOT_PASSWORD: testbed_key
+    ports:
+      - 44441:27017
 
   ucs_consumer:
-    image: ghga/upload-controller-service:0.3.0-11-g444f925-main
+    image: ghga/upload-controller-service:0.3.0-14-g663b4b7-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -86,9 +97,13 @@ services:
         condition: service_started
     environment:
       UCS_FILE_METADATA_EVENT_TOPIC: metadata
-      UCS_FILE_METADATA_EVENT_TYPE: metadata_upsert
-      UCS_UPLOAD_ACCEPTED_EVENT_TOPIC: file_ingestion
-      UCS_UPLOAD_ACCEPTED_EVENT_TYPE: upload_accepted
+      UCS_FILE_METADATA_EVENT_TYPE: file_metadata_upserts
+      UCS_UPLOAD_ACCEPTED_EVENT_TOPIC: internal_file_registry
+      UCS_UPLOAD_ACCEPTED_EVENT_TYPE: file_registered
+      UCS_UPLOAD_RECEIVED_EVENT_TOPIC: file_uploads
+      UCS_UPLOAD_RECEIVED_EVENT_TYPE: file_upload_received
+      UCS_UPLOAD_REJECTED_EVENT_TOPIC: file_interrogation
+      UCS_UPLOAD_REJECTED_EVENT_TYPE: file_validation_failure
       UCS_SERVICE_INSTANCE_ID: ucs-consumer-1
       UCS_KAFKA_SERVERS: '["kafka:9092"]'
       UCS_DB_CONNECTION_STR: mongodb://testbed_user:testbed_key@mongo_db
@@ -99,7 +114,7 @@ services:
     command: "consume-events"
 
   ucs_rest:
-    image: ghga/upload-controller-service:0.3.0-12-ge34429d-main
+    image: ghga/upload-controller-service:0.3.0-14-g663b4b7-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -110,9 +125,13 @@ services:
     environment:
       UCS_HOST: 0.0.0.0
       UCS_FILE_METADATA_EVENT_TOPIC: metadata
-      UCS_FILE_METADATA_EVENT_TYPE: metadata_upsert
-      UCS_UPLOAD_ACCEPTED_EVENT_TOPIC: file_ingestion
-      UCS_UPLOAD_ACCEPTED_EVENT_TYPE: upload_accepted
+      UCS_FILE_METADATA_EVENT_TYPE: file_metadata_upserts
+      UCS_UPLOAD_ACCEPTED_EVENT_TOPIC: internal_file_registry
+      UCS_UPLOAD_ACCEPTED_EVENT_TYPE: file_registered
+      UCS_UPLOAD_RECEIVED_EVENT_TOPIC: file_uploads
+      UCS_UPLOAD_RECEIVED_EVENT_TYPE: file_upload_received
+      UCS_UPLOAD_REJECTED_EVENT_TOPIC: file_interrogation
+      UCS_UPLOAD_REJECTED_EVENT_TYPE: file_validation_failure
       UCS_SERVICE_INSTANCE_ID: ucs-rest-1
       UCS_KAFKA_SERVERS: '["kafka:9092"]'
       UCS_DB_CONNECTION_STR: mongodb://testbed_user:testbed_key@mongo_db
@@ -123,7 +142,7 @@ services:
     command: "run-rest"
 
   dcs_consumer:
-    image: ghga/download-controller-service:0.4.0-3-g0c68049-main
+    image: ghga/download-controller-service:0.4.0-7-geb143c8-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -131,8 +150,14 @@ services:
       mongo_db:
         condition: service_started
     environment:
-      DCS_FILES_TO_REGISTER_TOPIC: file_registry
-      DCS_FILES_TO_REGISTER_TYPE: files_to_register
+      DCS_DOWNLOAD_SERVED_EVENT_TOPIC: file_downloads
+      DCS_DOWNLOAD_SERVED_EVENT_TYPE: download_served
+      DCS_FILE_REGISTERED_EVENT_TOPIC: file_downloads
+      DCS_FILE_REGISTERED_EVENT_TYPE: file_registered
+      DCS_FILES_TO_REGISTER_TOPIC: internal_file_registry
+      DCS_FILES_TO_REGISTER_TYPE: file_registered
+      DCS_UNSTAGED_DOWNLOAD_EVENT_TOPIC: file_downloads
+      DCS_UNSTAGED_DOWNLOAD_EVENT_TYPE: unstaged_download_requested
       DCS_SERVICE_INSTANCE_ID: dcs-consumer-1
       DCS_KAFKA_SERVERS: '["kafka:9092"]'
       DCS_DB_CONNECTION_STR: mongodb://testbed_user:testbed_key@mongo_db
@@ -145,7 +170,7 @@ services:
     command: "consume-events"
 
   dcs_rest:
-    image: ghga/download-controller-service:0.4.0-3-g0c68049-main
+    image: ghga/download-controller-service:0.4.0-7-geb143c8-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -155,8 +180,14 @@ services:
         condition: service_started
     environment:
       DCS_HOST: 0.0.0.0
-      DCS_FILES_TO_REGISTER_TOPIC: file_registry
-      DCS_FILES_TO_REGISTER_TYPE: files_to_register
+      DCS_DOWNLOAD_SERVED_EVENT_TOPIC: file_downloads
+      DCS_DOWNLOAD_SERVED_EVENT_TYPE: download_served
+      DCS_FILE_REGISTERED_EVENT_TOPIC: file_downloads
+      DCS_FILE_REGISTERED_EVENT_TYPE: file_registered
+      DCS_FILES_TO_REGISTER_TOPIC: internal_file_registry
+      DCS_FILES_TO_REGISTER_TYPE: file_registered
+      DCS_UNSTAGED_DOWNLOAD_EVENT_TOPIC: file_downloads
+      DCS_UNSTAGED_DOWNLOAD_EVENT_TYPE: unstaged_download_requested
       DCS_SERVICE_INSTANCE_ID: dcs-rest-1
       DCS_KAFKA_SERVERS: '["kafka:9092"]'
       DCS_DB_CONNECTION_STR: mongodb://testbed_user:testbed_key@mongo_db
@@ -168,7 +199,7 @@ services:
       DCS_S3_SECRET_ACCESS_KEY: testbed-secret
     command: "run-rest"
   ifrs:
-    image: ghga/internal-file-registry-service:0.3.0-4-g71577c7-main
+    image: ghga/internal-file-registry-service:0.3.0-16-g4d8e3ed-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -176,8 +207,8 @@ services:
       mongo_db:
         condition: service_started
     environment:
-      IFRS_FILES_TO_REGISTER_TOPIC: file_ingestion
-      IFRS_FILES_TO_REGISTER_TYPE: files_to_register
+      IFRS_FILES_TO_REGISTER_TOPIC: file_interrogation
+      IFRS_FILES_TO_REGISTER_TYPE: file_interrogation_success
       IFRS_OUTBOX_BUCKET: outbox
       IFRS_INBOX_BUCKET: inbox
       IFRS_PERMANENT_BUCKET: permanent
