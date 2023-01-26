@@ -35,8 +35,6 @@ from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).parent.parent
 
-FILE_NAME = os.urandom(16).hex()
-
 
 @config_from_yaml(prefix="tb")
 class Config(S3Config, KafkaConfig):
@@ -111,17 +109,20 @@ def generate_file(file_size: int):
             crypt4gh.lib.encrypt(
                 keys=encryption_keys, infile=random_data, outfile=encrypted_file
             )
+            encrypted_file.seek(0)
             encrypted_data = encrypted_file.read()
 
             return data, encrypted_data, size, checksum
 
 
-async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256: str):
+async def populate_metadata(
+    file_id: str, file_name: str, decrypted_size: int, decrypted_sha256: str
+):
     """Populate metadedata submission schema and send event for UCS"""
     metadata_files = [
         event_schemas.MetadataSubmissionFiles(
             file_id=file_id,
-            file_name=FILE_NAME,
+            file_name=file_name,
             decrypted_size=decrypted_size,
             decrypted_sha256=decrypted_sha256,
         ),
@@ -143,10 +144,15 @@ async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256:
     time.sleep(15)
 
 
-async def populate_and_upload(file_id: str, data: bytes, size: int, checksum: str):
+async def populate_and_upload(
+    file_id: str, file_name: str, data: bytes, size: int, checksum: str
+):
     """TODO"""
     await populate_metadata(
-        file_id=file_id, decrypted_size=size, decrypted_sha256=checksum
+        file_id=file_id,
+        file_name=file_name,
+        decrypted_size=size,
+        decrypted_sha256=checksum,
     )
     with NamedTemporaryFile() as tmp_file:
         tmp_file.write(data)
@@ -165,32 +171,40 @@ async def delegate_paths():
         file_size=file_size
     )
     await unhappy_path(data=unencrypted_data, size=size, checksum=checksum)
-    # await happy_path(data=encrypted_data, size=size, checksum=checksum)
+    await happy_path(data=encrypted_data, size=size, checksum=checksum)
 
 
 async def unhappy_path(data: bytes, size: int, checksum: str):
     """TODO"""
     file_id = os.urandom(16).hex()
-    await populate_and_upload(file_id=file_id, data=data, size=size, checksum=checksum)
-    await check_unhappy_state(file_id=file_id)
+    file_name = os.urandom(16).hex()
+    await populate_and_upload(
+        file_id=file_id, file_name=file_name, data=data, size=size, checksum=checksum
+    )
+    await check_unhappy_state(file_id=file_id, file_name=file_name)
 
 
 async def happy_path(data: bytes, size: int, checksum: str):
     """TODO"""
     file_id = os.urandom(16).hex()
-    await populate_and_upload(file_id=file_id, data=data, size=size, checksum=checksum)
-    await check_happy_state(file_id=file_id)
+    file_name = os.urandom(16).hex()
+    await populate_and_upload(
+        file_id=file_id, file_name=file_name, data=data, size=size, checksum=checksum
+    )
+    await check_happy_state(file_id=file_id, file_name=file_name)
 
 
-async def check_unhappy_state(file_id: str):
+async def check_unhappy_state(file_id: str, file_name: str):
     """TODO"""
     await check_s3(file_id=file_id)
-    internal_id = await check_metadata()
+    internal_id = await check_metadata(file_name=file_name)
     await check_rejected(internal_id=internal_id)
 
 
-async def check_happy_state(file_id: str):
+async def check_happy_state(file_id: str, file_name: str):
     """TODO"""
+    await check_s3(file_id=file_id)
+    inernal_id = await check_metadata(file_name=file_name)
 
 
 async def check_s3(file_id: str):
@@ -203,14 +217,14 @@ async def check_s3(file_id: str):
         raise ValueError("Object missing in inbox")
 
 
-async def check_metadata():
+async def check_metadata(file_name: str):
     """TODO"""
     dao_factory = MongoDbDaoFactory(config=DBConfig.ucs_config)
     metadata_dao = await dao_factory.get_dao(
         name="file_metadata", dto_model=UCSMetadataQuery, id_field="file_id"
     )
 
-    result = await metadata_dao.find_one(mapping={"file_name": FILE_NAME})
+    result = await metadata_dao.find_one(mapping={"file_name": file_name})
 
     # assert result
     internal_id = result.file_id
@@ -227,7 +241,6 @@ async def check_rejected(internal_id: str):
     )
     result = await upload_attempt_dao.find_one(mapping={"file_id": internal_id})
 
-    print(result)
     # assert result
     # assert result.status == "rejected"
 
