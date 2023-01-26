@@ -21,6 +21,9 @@ import time
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
+import crypt4gh.header
+import crypt4gh.keys
+import crypt4gh.lib
 from ghga_connector.cli import upload
 from ghga_event_schemas import pydantic_ as event_schemas
 from ghga_service_chassis_lib.utils import big_temp_file
@@ -87,28 +90,6 @@ class UCSMetadataQuery(BaseModel):
     file_name: str
 
 
-async def upload_and_verify():
-    """TODO"""
-    file_id = await run_upload()
-    await check_state(file_id=file_id)
-
-
-async def run_upload():
-    """main"""
-    file_id = os.urandom(16).hex()
-    file_size = 20 * 1024**2
-    file_data, file_size, checksum = generate_file(file_size=file_size)
-    await populate_metadata(
-        file_id=file_id, decrypted_size=file_size, decrypted_sha256=checksum
-    )
-    # need path for connector
-    with NamedTemporaryFile() as tmp_file:
-        tmp_file.write(file_data)
-        tmp_file.seek(0)
-        upload_file(file_id=file_id, file_path=tmp_file.name)
-    return file_id
-
-
 def generate_file(file_size: int):
     """Generate encrypted test file"""
 
@@ -117,7 +98,22 @@ def generate_file(file_size: int):
         data = random_data.read()
         size = len(data)
         checksum = hashlib.sha256(data).hexdigest()
-        return data, size, checksum
+
+        with NamedTemporaryFile() as encrypted_file:
+            random_data.seek(0)
+            private_key = crypt4gh.keys.get_private_key(
+                filepath=BASE_DIR / "example_data" / "key.sec", callback=lambda: ()
+            )
+            public_key = crypt4gh.keys.get_public_key(
+                filepath=BASE_DIR / "example_data" / "key.pub"
+            )
+            encryption_keys = [(0, private_key, public_key)]
+            crypt4gh.lib.encrypt(
+                keys=encryption_keys, infile=random_data, outfile=encrypted_file
+            )
+            encrypted_data = encrypted_file.read()
+
+            return data, encrypted_data, size, checksum
 
 
 async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256: str):
@@ -147,23 +143,54 @@ async def populate_metadata(file_id: str, decrypted_size: int, decrypted_sha256:
     time.sleep(15)
 
 
-def upload_file(file_id: str, file_path: str):
-    """Run file upload using the ghga-connector"""
-    upload(
-        file_id=file_id,
-        file_path=file_path,
-        pubkey_path=BASE_DIR / "example_data" / "key.pub",
+async def populate_and_upload(file_id: str, data: bytes, size: int, checksum: str):
+    """TODO"""
+    await populate_metadata(
+        file_id=file_id, decrypted_size=size, decrypted_sha256=checksum
     )
+    with NamedTemporaryFile() as tmp_file:
+        tmp_file.write(data)
+        tmp_file.seek(0)
+        upload(
+            file_id=file_id,
+            file_path=tmp_file.name,
+            pubkey_path=BASE_DIR / "example_data" / "key.pub",
+        )
 
 
-async def check_state(file_id: str):
+async def delegate_paths():
+    """TODO"""
+    file_size = 20 * 1024**2
+    unencrypted_data, encrypted_data, size, checksum = generate_file(
+        file_size=file_size
+    )
+    await unhappy_path(data=unencrypted_data, size=size, checksum=checksum)
+    # await happy_path(data=encrypted_data, size=size, checksum=checksum)
+
+
+async def unhappy_path(data: bytes, size: int, checksum: str):
+    """TODO"""
+    file_id = os.urandom(16).hex()
+    await populate_and_upload(file_id=file_id, data=data, size=size, checksum=checksum)
+    await check_unhappy_state(file_id=file_id)
+
+
+async def happy_path(data: bytes, size: int, checksum: str):
+    """TODO"""
+    file_id = os.urandom(16).hex()
+    await populate_and_upload(file_id=file_id, data=data, size=size, checksum=checksum)
+    await check_happy_state(file_id=file_id)
+
+
+async def check_unhappy_state(file_id: str):
     """TODO"""
     await check_s3(file_id=file_id)
     internal_id = await check_metadata()
     await check_rejected(internal_id=internal_id)
-    # await check_ifrs()
-    await check_dcs_db()
-    await check_secret()
+
+
+async def check_happy_state(file_id: str):
+    """TODO"""
 
 
 async def check_s3(file_id: str):
@@ -205,13 +232,5 @@ async def check_rejected(internal_id: str):
     # assert result.status == "rejected"
 
 
-async def check_dcs_db():
-    """TODO"""
-
-
-async def check_secret():
-    """TODO"""
-
-
 if __name__ == "__main__":
-    asyncio.run(upload_and_verify())
+    asyncio.run(delegate_paths())

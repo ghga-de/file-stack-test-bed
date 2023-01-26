@@ -8,3 +8,4 @@ ghga-event-schemas==0.8.0
 hexkit[akafka, mongodb]==0.8.3
 ghga-service-chassis-lib[api]==0.17.2
 ghga-connector==0.2.5
+crypt4gh==1.6
