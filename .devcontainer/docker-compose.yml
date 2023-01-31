@@ -37,7 +37,6 @@ services:
       TB_S3_SECRET_ACCESS_KEY: testbed-secret
       TB_INBOX_BUCKET: inbox
       TB_OBJECT_ID: testbed-event-object
-      TB_SUBMITTER_PUBKEY: ZZ7Ss44DXhAwObVkqHaKoF2eyxK5rMHDcQ1R605iCQM=
       TB_SERVICE_INSTANCE_ID: testbed-app-1
       TB_KAFKA_SERVERS: '["kafka:9092"]'
       TB_SERVICE_NAME: testbed_kafka
@@ -46,19 +45,19 @@ services:
       TB_VAULT_TOKEN: dev-token
 
   ekss:
-    image: ghga/encryption-key-store-service:0.0.0-16-d8ccd14-main
+    image: ghga/encryption-key-store-service:0.0.0-15-3904d1e-main
     depends_on:
       - vault
     environment:
       EKSS_HOST: 0.0.0.0
       EKSS_PORT: 80
-      EKSS_VAULT_HOST: vault
+      EKSS_VAULT_HOST: http://vault
       EKSS_VAULT_PORT: 8200
       EKSS_VAULT_TOKEN: dev-token
-      EKSS_SERVER_PRIVATE_KEY: YzRnaC12MQAEbm9uZQAEbm9uZQAgG8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
+      EKSS_SERVER_PRIVATE_KEY: G8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
       EKSS_SERVER_PUBLIC_KEY: qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=
   irs:
-    image: ghga/interrogation-room-service:0.0.0-16-4646c1a-main
+    image: ghga/interrogation-room-service:0.0.0-17-1476c90-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -209,7 +208,7 @@ services:
       DCS_S3_SECRET_ACCESS_KEY: testbed-secret
     command: "run-rest"
   ifrs:
-    image: ghga/internal-file-registry-service:0.3.0-16-g4d8e3ed-main
+    image: ghga/internal-file-registry-service:0.3.0-15-g70c4c79-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -222,7 +221,7 @@ services:
       IFRS_FILE_STAGED_EVENT_TOPIC: internal_file_registry
       IFRS_FILE_STAGED_EVENT_TYPE: file_staged_for_download
       IFRS_FILES_TO_REGISTER_TOPIC: file_interrogation
-      IFRS_FILES_TO_REGISTER_TYPE: file_interrogation_success
+      IFRS_FILES_TO_REGISTER_TYPE: file_validation_success
       IFRS_FILES_TO_STAGE_TOPIC: file_downloads
       IFRS_FILES_TO_STAGE_TYPE: file_Stage_requested
       IFRS_OUTBOX_BUCKET: outbox
@@ -257,6 +256,18 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
     ports:
       - 9092:9092
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
 
   localstack:
     image: localstack/localstack:latest
