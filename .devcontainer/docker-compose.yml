@@ -86,16 +86,6 @@ services:
     ports:
       - 44441:27017
 
-  mongo_express:
-    image: mongo-express
-    environment:
-      - ME_CONFIG_MONGODB_AUTH_DATABSE=admin
-      - ME_CONFIG_MONGODB_URL=mongodb://testbed_user:testbed_key@mongo_db:27017
-    depends_on:
-      - mongo_db
-    ports:
-      - 8081:8081
-
   ucs_consumer:
     image: ghga/upload-controller-service:0.3.0-15-ge892569-main
     restart: unless-stopped
@@ -256,18 +246,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
     ports:
       - 9092:9092
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - 8080:8080
-    restart: unless-stopped
-    environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
 
   localstack:
     image: localstack/localstack:latest
