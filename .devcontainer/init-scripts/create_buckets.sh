@@ -16,5 +16,6 @@
 # limitations under the License.
 
 awslocal s3 mb s3://inbox
+awslocal s3 mb s3://staging
 awslocal s3 mb s3://outbox
 awslocal s3 mb s3://permanent

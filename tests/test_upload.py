@@ -29,7 +29,8 @@ async def test_upload_path():
     """Test upload path"""
     unencrypted_id, encrypted_id = await delegate_paths()
     await check_status(file_id=unencrypted_id, expected_status="rejected")
-    time.sleep(240)
+    # < 120 did not work in actions, so let's currently keep it this way
+    time.sleep(150)
     await check_status(file_id=encrypted_id, expected_status="accepted")
 
 
