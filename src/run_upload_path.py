@@ -118,7 +118,7 @@ async def populate_metadata_and_upload(
         decrypted_sha256=checksum,
     )
     # wait for possible delays in event delivery
-    time.sleep(15)
+    time.sleep(30)
     with NamedTemporaryFile() as tmp_file:
         tmp_file.write(data)
         tmp_file.flush()
