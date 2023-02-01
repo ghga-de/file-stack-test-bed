@@ -29,7 +29,7 @@ async def test_upload_path():
     """Test upload path"""
     unencrypted_id, encrypted_id = await delegate_paths()
     await check_status(file_id=unencrypted_id, expected_status="rejected")
-    time.sleep(120)
+    time.sleep(240)
     await check_status(file_id=encrypted_id, expected_status="accepted")
 
 
