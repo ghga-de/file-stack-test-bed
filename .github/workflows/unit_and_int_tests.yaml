@@ -37,6 +37,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          pytest \
-            --cov="${REL_SRC_DIR_PATH}" \
-            --cov-report=xml
+          docker exec \
+            --workdir /workspace \
+            devcontainer_app_1 \
+            pytest
