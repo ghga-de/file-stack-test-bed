@@ -7,33 +7,20 @@ jobs:
     runs-on: ubuntu-latest
     name: Unit and Integration Tests
     env:
-      REL_SRC_DIR_PATH: ./src
-      GHGA_CONNECTOR_UPLOAD_API: http://ucs_rest:8080
-      TB_DB_CONNECTION_STR: mongodb://testbed_user:testbed_key@mongo_db
-      TB_FILE_METADATA_EVENT_TOPIC: metadata
-      TB_FILE_METADATA_EVENT_TYPE: file_metadata_upserts
-      TB_S3_ENDPOINT_URL: http://localstack:4566
-      TB_S3_ACCESS_KEY_ID: testbed-key
-      TB_S3_SECRET_ACCESS_KEY: testbed-secret
-      TB_INBOX_BUCKET: inbox
-      TB_OBJECT_ID: testbed-event-object
-      TB_SERVICE_INSTANCE_ID: testbed-app-1
-      TB_KAFKA_SERVERS: '["kafka:9092"]'
-      TB_SERVICE_NAME: testbed_kafka
-      TB_VAULT_HOST: vault
-      TB_VAULT_PORT: 8200
-      TB_VAULT_TOKEN: dev-token
+      REL_SRC_DIR_PATH: ./srcq
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
+      - name: Set up containers
+        run: |
+          docker-compose -f .devcontainer/docker-compose.yml up -d
 
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
+          docker exec \
+            --workdir /workspace \
+            devcontainer_app_1 \
+            sudo pip install -r requirements.txt
 
       - name: Run pytest
         run: |
