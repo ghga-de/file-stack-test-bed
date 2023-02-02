@@ -6,25 +6,24 @@ jobs:
   unit_and_int_tests:
     runs-on: ubuntu-latest
     name: Unit and Integration Tests
-    env:
-      REL_SRC_DIR_PATH: ./src
+
     steps:
-      - uses: actions/checkout@v2.4.2
+      - uses: actions/checkout@v3
 
-      - name: Set up containers
-        run: |
-          docker-compose -f .devcontainer/docker-compose.yml up -d
-
-      - name: Install Dependencies
-        run: |
-          docker exec \
-            --workdir /workspace \
-            devcontainer_app_1 \
-            sudo pip install -r requirements.txt
+      - id: common
+        uses: ghga-de/gh-action-common@v1.0.3
 
       - name: Run pytest
         run: |
-          docker exec \
-            --workdir /workspace \
-            devcontainer_app_1 \
-            pytest
+          export ${{ steps.common.outputs.CONFIG_YAML_ENV_VAR_NAME }}="${{ steps.common.outputs.CONFIG_YAML }}"
+          pytest \
+            --cov="${{ steps.common.outputs.MAIN_SRC_DIR }}" \
+            --cov-report=xml
+
+      - id: coveralls
+        name: Upload coverage to coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip3 install --upgrade coveralls
+          coveralls --service=github
