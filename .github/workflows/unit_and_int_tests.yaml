@@ -11,10 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
+      - id: common
+        uses: ghga-de/gh-action-common@v1.0.3
 
       - name: Install Dependencies
         run: |
@@ -22,6 +20,7 @@ jobs:
 
       - name: Run pytest
         run: |
+          export ${{ steps.common.outputs.CONFIG_YAML_ENV_VAR_NAME }}="${{ steps.common.outputs.CONFIG_YAML }}"
           pytest \
             --cov="${REL_SRC_DIR_PATH}" \
             --cov-report=xml
