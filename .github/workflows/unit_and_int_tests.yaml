@@ -10,17 +10,13 @@ jobs:
       REL_SRC_DIR_PATH: ./src
     steps:
       - uses: actions/checkout@v3
-
-      - id: common
-        uses: ghga-de/gh-action-common@v1.0.3
-
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
 
       - name: Run pytest
         run: |
-          export ${{ steps.common.outputs.CONFIG_YAML_ENV_VAR_NAME }}="${{ steps.common.outputs.CONFIG_YAML }}"
+          export CONFIG_YAML_ENV_VAR_NAME=TB_CONFIG_YAML
           pytest \
             --cov="${REL_SRC_DIR_PATH}" \
             --cov-report=xml
