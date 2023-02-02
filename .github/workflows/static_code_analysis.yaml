@@ -10,34 +10,40 @@ jobs:
       REL_SRC_DIR_PATH: ./src
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
+
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
+
       - uses: pre-commit/action@v3.0.0
         env:
           SKIP: no-commit-to-branch
+
       - name: black
         run: |
           black --check .
+
       - name: isort
         run: |
           isort --check --profile black .
+
       - name: mypy
         run: |
-          mypy \
-            --show-error-codes \
-            --disable-error-code import \
-            "${REL_SRC_DIR_PATH}"
+          mypy .
+
       - name: pylint
         run: |
           pylint "${REL_SRC_DIR_PATH}"
+
       - name: flake8
         run: |
           flake8 --config .flake8
+
       - name: bandit
         run: |
           bandit -r "${REL_SRC_DIR_PATH}"
