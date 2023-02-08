@@ -48,7 +48,7 @@ services:
     environment:
       EKSS_HOST: 0.0.0.0
       EKSS_PORT: 80
-      EKSS_DEBUG_VAULT: true
+      EKSS_DEBUG_VAULT: "true"
       EKSS_VAULT_HOST: vault
       EKSS_VAULT_PORT: 8200
       EKSS_VAULT_ROLE_ID: 9f03d595-c964-441c-a68e-2e1534f2bb56
