@@ -40,20 +40,19 @@ services:
       TB_SERVICE_INSTANCE_ID: testbed-app-1
       TB_KAFKA_SERVERS: '["kafka:9092"]'
       TB_SERVICE_NAME: testbed_kafka
-      TB_VAULT_HOST: vault
-      TB_VAULT_PORT: 8200
-      TB_VAULT_TOKEN: dev-token
 
   ekss:
-    image: ghga/encryption-key-store-service:0.0.0-19-dd3a464-main
+    image: ghga/encryption-key-store-service:0.0.0-21-02438c0-main
     depends_on:
       - vault
     environment:
       EKSS_HOST: 0.0.0.0
       EKSS_PORT: 80
-      EKSS_VAULT_HOST: http://vault
+      EKSS_DEBUG_VAULT: "true"
+      EKSS_VAULT_HOST: vault
       EKSS_VAULT_PORT: 8200
-      EKSS_VAULT_TOKEN: dev-token
+      EKSS_VAULT_ROLE_ID: 9f03d595-c964-441c-a68e-2e1534f2bb56
+      EKSS_VAULT_SECRET_ID: a3e80b1d-86d3-4c23-85ee-589031ec2cba
       EKSS_SERVER_PRIVATE_KEY: G8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
       EKSS_SERVER_PUBLIC_KEY: qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=
   irs:
@@ -142,7 +141,7 @@ services:
     command: "run-rest"
 
   dcs_consumer:
-    image: ghga/download-controller-service:0.4.0-8-g667a951-main
+    image: ghga/download-controller-service:0.4.0-11-gf4f7b2a-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -170,7 +169,7 @@ services:
     command: "consume-events"
 
   dcs_rest:
-    image: ghga/download-controller-service:0.4.0-8-g667a951-main
+    image: ghga/download-controller-service:0.4.0-11-gf4f7b2a-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -268,7 +267,7 @@ services:
         target: /var/lib/localstack
         volume:
           nocopy: true
-      - ./init-scripts:/docker-entrypoint-initaws.d
+      - ./init-scripts/localstack:/docker-entrypoint-initaws.d
   vault:
     image: hashicorp/vault:1.12
     ports:
@@ -278,6 +277,16 @@ services:
       VAULT_DEV_ROOT_TOKEN_ID: dev-token
     cap_add:
       - IPC_LOCK
+
+  vault_init:
+    image: hashicorp/vault:1.12
+    depends_on:
+      - vault
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+    volumes:
+      - ./init-scripts/vault:/docker-entrypoint.d
+    entrypoint: ./docker-entrypoint.d/setup.sh
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
