@@ -20,7 +20,6 @@ import hashlib
 import os
 import sys
 import time
-from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import crypt4gh.header
@@ -29,27 +28,10 @@ import crypt4gh.lib
 from ghga_connector.cli import upload
 from ghga_event_schemas import pydantic_ as event_schemas
 from ghga_service_chassis_lib.utils import big_temp_file
-from hexkit.config import config_from_yaml
-from hexkit.providers.akafka import KafkaConfig, KafkaEventPublisher
-from hexkit.providers.s3 import S3Config, S3ObjectStorage
+from hexkit.providers.akafka import KafkaEventPublisher
+from hexkit.providers.s3 import S3ObjectStorage
 
-
-@config_from_yaml(prefix="tb")
-class Config(S3Config, KafkaConfig):
-    """
-    Custom Config class for the test app.
-    Defaults set for not running inside devcontainer.
-    """
-
-    db_connection_str: str
-    file_metadata_event_topic: str
-    file_metadata_event_type: str
-    inbox_bucket: str
-
-
-BASE_DIR = Path(__file__).parent.parent
-CONFIG = Config()
-FILE_SIZE = 20 * 1024**2
+from src.commons import BASE_DIR, CONFIG, FILE_SIZE
 
 sys.set_int_max_str_digits(FILE_SIZE)
 

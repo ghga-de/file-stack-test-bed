@@ -25,18 +25,29 @@ from src.run_upload_path import delegate_paths
 
 
 @pytest.mark.asyncio
-async def test_upload_path():
-    """Test upload path"""
+async def test_full_path():
+    """Test up- and download path"""
     unencrypted_id, encrypted_id = await delegate_paths()
-    await check_status(file_id=unencrypted_id, expected_status="rejected")
+    await check_upload_path(unencrypted_id=unencrypted_id, encrypted_id=encrypted_id)
+    await check_download_path(encrypted_id=encrypted_id)
+
+
+async def check_upload_path(*, unencrypted_id: str, encrypted_id: str):
+    """Check correct state for upload path"""
+    await check_upload_status(file_id=unencrypted_id, expected_status="rejected")
     # <= 180 did not work in actions, so let's currently keep it this way
     time.sleep(240)
-    await check_status(file_id=encrypted_id, expected_status="accepted")
+    await check_upload_status(file_id=encrypted_id, expected_status="accepted")
 
 
-async def check_status(*, file_id: str, expected_status: str):
+async def check_upload_status(*, file_id: str, expected_status: str):
     """Assert upload attempt state matches expected state"""
     metadata = get_file_metadata(api_url=config.upload_api, file_id=file_id)
     upload_id = metadata["latest_upload_id"]
     upload_attempt = get_upload_info(api_url=config.upload_api, upload_id=upload_id)
     assert upload_attempt["status"] == expected_status
+
+
+async def check_download_path(*, encrypted_id: str):
+    """Check correct state for download path"""
+    

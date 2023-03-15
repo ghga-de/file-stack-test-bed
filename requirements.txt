@@ -1,7 +1,7 @@
 # All your requirements go here. Please adapt as needed:
 ghga-event-schemas==0.8.0
 hexkit[akafka, mongodb]==0.9.0
-ghga-connector[dev]==0.2.6
+ghga-connector[dev]==0.2.10
 crypt4gh==1.6
 
 # 3.4.1 -> 3.4.2 causes issues in hexkit, but 3.7.1 works again

@@ -42,7 +42,7 @@ services:
       TB_SERVICE_NAME: testbed_kafka
 
   ekss:
-    image: ghga/encryption-key-store-service:0.0.0-21-02438c0-main
+    image: ghga/encryption-key-store-service:0.0.0-22-4d92c54-main
     depends_on:
       - vault
     environment:
@@ -56,7 +56,7 @@ services:
       EKSS_SERVER_PRIVATE_KEY: G8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
       EKSS_SERVER_PUBLIC_KEY: qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=
   irs:
-    image: ghga/interrogation-room-service:0.0.0-18-442a0df-main
+    image: ghga/interrogation-room-service:0.0.0-19-f87dd1b-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -87,7 +87,7 @@ services:
       - 44441:27017
 
   ucs_consumer:
-    image: ghga/upload-controller-service:0.3.0-15-ge892569-main
+    image: ghga/upload-controller-service:0.3.0-18-g0b8060e-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -113,7 +113,7 @@ services:
     command: "consume-events"
 
   ucs_rest:
-    image: ghga/upload-controller-service:0.3.0-15-ge892569-main
+    image: ghga/upload-controller-service:0.3.0-18-g0b8060e-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -141,7 +141,7 @@ services:
     command: "run-rest"
 
   dcs_consumer:
-    image: ghga/download-controller-service:0.4.0-11-gf4f7b2a-main
+    image: ghga/download-controller-service:0.4.0-14-g4315c66-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -169,7 +169,7 @@ services:
     command: "consume-events"
 
   dcs_rest:
-    image: ghga/download-controller-service:0.4.0-11-gf4f7b2a-main
+    image: ghga/download-controller-service:0.4.0-14-g4315c66-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -198,7 +198,7 @@ services:
       DCS_S3_SECRET_ACCESS_KEY: testbed-secret
     command: "run-rest"
   ifrs:
-    image: ghga/internal-file-registry-service:0.3.0-18-gd7c6b2a-main
+    image: ghga/internal-file-registry-service:0.3.0-20-g82f39eb-main
     restart: unless-stopped
     depends_on:
       kafka:
