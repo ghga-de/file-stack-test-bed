@@ -28,7 +28,10 @@ services:
     user: vscode
 
     environment:
+      GHGA_CONNECTOR_DOWNLOAD_API: http://dcs_rest:8080
       GHGA_CONNECTOR_UPLOAD_API: http://ucs_rest:8080
+      GHGA_CONNECTOR_PART_SIZE: 8589934592
+      TB_PUBKEY_PATH: "example_data/key.pub"
       TB_DB_CONNECTION_STR: mongodb://testbed_user:testbed_key@mongo_db
       TB_FILE_METADATA_EVENT_TOPIC: metadata
       TB_FILE_METADATA_EVENT_TYPE: file_metadata_upserts
@@ -40,6 +43,13 @@ services:
       TB_SERVICE_INSTANCE_ID: testbed-app-1
       TB_KAFKA_SERVERS: '["kafka:9092"]'
       TB_SERVICE_NAME: testbed_kafka
+
+  mongo-express:
+    image: mongo-express
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://testbed_user:testbed_key@mongo_db
+    ports:
+      - "8081:8081"
 
   ekss:
     image: ghga/encryption-key-store-service:0.0.0-22-4d92c54-main
@@ -141,7 +151,7 @@ services:
     command: "run-rest"
 
   dcs_consumer:
-    image: ghga/download-controller-service:0.4.0-14-g4315c66-main
+    image: ghga/download-controller-service:0.4.0-15-ga1e2a15-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -166,10 +176,12 @@ services:
       DCS_S3_ENDPOINT_URL: http://localstack:4566
       DCS_S3_ACCESS_KEY_ID: testbed-key
       DCS_S3_SECRET_ACCESS_KEY: testbed-secret
+      DCS_EKSS_BASE_URL: http://ekss
+      DCS_PRESIGNED_URL_EXPIRES_AFTER: 30
     command: "consume-events"
 
   dcs_rest:
-    image: ghga/download-controller-service:0.4.0-14-g4315c66-main
+    image: ghga/download-controller-service:0.4.0-15-ga1e2a15-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -196,6 +208,8 @@ services:
       DCS_S3_ENDPOINT_URL: http://localstack:4566
       DCS_S3_ACCESS_KEY_ID: testbed-key
       DCS_S3_SECRET_ACCESS_KEY: testbed-secret
+      DCS_EKSS_BASE_URL: http://ekss
+      DCS_PRESIGNED_URL_EXPIRES_AFTER: 30
     command: "run-rest"
   ifrs:
     image: ghga/internal-file-registry-service:0.3.0-20-g82f39eb-main

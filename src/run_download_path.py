@@ -13,17 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
+from pathlib import Path
+from ghga_connector.cli import download
 
-import crypt4gh.header
-import crypt4gh.keys
-import crypt4gh.lib
-from ghga_connector.cli import upload
-from ghga_event_schemas import pydantic_ as event_schemas
+from src.commons import BASE_DIR
 
 
-from src.commons import BASE_DIR, CONFIG, FILE_SIZE
-
-
-def download_file(file_id: str):
+def download_file(file_id: str, output_dir: Path):
     """Download a file"""
+    download(
+        file_id=file_id,
+        output_dir=output_dir,
+        pubkey_path=BASE_DIR / "example_data" / "key.pub",
+    )

@@ -20,16 +20,28 @@ import time
 import pytest
 from ghga_connector.cli import config
 from ghga_connector.core.api_calls import get_file_metadata, get_upload_info
+from ghga_event_schemas import pydantic_ as event_schemas
+from hexkit.providers.akafka.testutils import (
+    check_recorded_events,
+    EventRecorder,
+    ExpectedEvent,
+)
 
+from src.commons import BASE_DIR, CONFIG
 from src.run_upload_path import delegate_paths
+from src.run_download_path import download_file
 
 
 @pytest.mark.asyncio
 async def test_full_path():
     """Test up- and download path"""
-    unencrypted_id, encrypted_id = await delegate_paths()
-    await check_upload_path(unencrypted_id=unencrypted_id, encrypted_id=encrypted_id)
-    await check_download_path(encrypted_id=encrypted_id)
+    unencrypted_id, encrypted_id, checksum = await delegate_paths()
+    upload_id = await check_upload_path(
+        unencrypted_id=unencrypted_id, encrypted_id=encrypted_id
+    )
+    await check_download_path(
+        encrypted_id=encrypted_id, upload_id=upload_id, checksum=checksum
+    )
 
 
 async def check_upload_path(*, unencrypted_id: str, encrypted_id: str):
@@ -37,7 +49,10 @@ async def check_upload_path(*, unencrypted_id: str, encrypted_id: str):
     await check_upload_status(file_id=unencrypted_id, expected_status="rejected")
     # <= 180 did not work in actions, so let's currently keep it this way
     time.sleep(240)
-    await check_upload_status(file_id=encrypted_id, expected_status="accepted")
+    upload_id = await check_upload_status(
+        file_id=encrypted_id, expected_status="accepted"
+    )
+    return upload_id
 
 
 async def check_upload_status(*, file_id: str, expected_status: str):
@@ -46,8 +61,24 @@ async def check_upload_status(*, file_id: str, expected_status: str):
     upload_id = metadata["latest_upload_id"]
     upload_attempt = get_upload_info(api_url=config.upload_api, upload_id=upload_id)
     assert upload_attempt["status"] == expected_status
+    return upload_id
 
 
-async def check_download_path(*, encrypted_id: str):
+async def check_download_path(*, encrypted_id: str, upload_id: str, checksum: str):
     """Check correct state for download path"""
-    
+    event_recorder = EventRecorder(
+        kafka_servers=CONFIG.kafka_servers, topic="file_downloads"
+    )
+    async with event_recorder:
+        download_file(file_id=encrypted_id, output_dir=BASE_DIR / "example_data")
+
+    payload = event_schemas.FileDownloadServed(
+        file_id=encrypted_id, decrypted_sha256=checksum, context="unkown"
+    ).json()
+    type_ = "download_served"
+    key = encrypted_id
+    expected_event = ExpectedEvent(payload=payload, type_=type_, key=key)
+
+    check_recorded_events(
+        recorded_events=event_recorder.recorded_events, expected_events=[expected_event]
+    )
