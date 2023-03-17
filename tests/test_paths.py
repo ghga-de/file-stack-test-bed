@@ -22,14 +22,14 @@ from ghga_connector.cli import config
 from ghga_connector.core.api_calls import get_file_metadata, get_upload_info
 from ghga_event_schemas import pydantic_ as event_schemas
 from hexkit.providers.akafka.testutils import (
-    check_recorded_events,
     EventRecorder,
     ExpectedEvent,
+    check_recorded_events,
 )
 
 from src.commons import BASE_DIR, CONFIG
-from src.run_upload_path import delegate_paths
 from src.run_download_path import download_file
+from src.run_upload_path import delegate_paths
 
 
 @pytest.mark.asyncio

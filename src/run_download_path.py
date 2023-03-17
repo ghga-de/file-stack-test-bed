@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from pathlib import Path
+
 from ghga_connector.cli import download
 
 from src.commons import BASE_DIR
