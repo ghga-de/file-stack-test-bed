@@ -46,7 +46,7 @@ async def delegate_paths():
     unencrypted_id = await populate_data(data=unencrypted_data, checksum=checksum)
     print("Uploading encrypted file (happy path)")
     encrypted_id = await populate_data(data=encrypted_data, checksum=checksum)
-    return unencrypted_id, encrypted_id, checksum
+    return unencrypted_id, encrypted_id, unencrypted_data, checksum
 
 
 def generate_file():

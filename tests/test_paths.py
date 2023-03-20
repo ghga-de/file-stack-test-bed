@@ -28,20 +28,18 @@ from hexkit.providers.akafka.testutils import (
 )
 
 from src.commons import BASE_DIR, CONFIG
-from src.run_download_path import download_file
+from src.run_download_path import decrypt_file, download_file
 from src.run_upload_path import delegate_paths
 
 
 @pytest.mark.asyncio
 async def test_full_path():
     """Test up- and download path"""
-    unencrypted_id, encrypted_id, checksum = await delegate_paths()
-    upload_id = await check_upload_path(
-        unencrypted_id=unencrypted_id, encrypted_id=encrypted_id
-    )
-    await check_download_path(
-        encrypted_id=encrypted_id, upload_id=upload_id, checksum=checksum
-    )
+    unencrypted_id, encrypted_id, unencrypted_data, checksum = await delegate_paths()
+
+    await check_upload_path(unencrypted_id=unencrypted_id, encrypted_id=encrypted_id)
+    await check_download_path(encrypted_id=encrypted_id, checksum=checksum)
+    decrypt_and_check(encrypted_id=encrypted_id, content=unencrypted_data)
 
 
 async def check_upload_path(*, unencrypted_id: str, encrypted_id: str):
@@ -49,10 +47,7 @@ async def check_upload_path(*, unencrypted_id: str, encrypted_id: str):
     await check_upload_status(file_id=unencrypted_id, expected_status="rejected")
     # <= 180 did not work in actions, so let's currently keep it this way
     time.sleep(240)
-    upload_id = await check_upload_status(
-        file_id=encrypted_id, expected_status="accepted"
-    )
-    return upload_id
+    await check_upload_status(file_id=encrypted_id, expected_status="accepted")
 
 
 async def check_upload_status(*, file_id: str, expected_status: str):
@@ -61,10 +56,9 @@ async def check_upload_status(*, file_id: str, expected_status: str):
     upload_id = metadata["latest_upload_id"]
     upload_attempt = get_upload_info(api_url=config.upload_api, upload_id=upload_id)
     assert upload_attempt["status"] == expected_status
-    return upload_id
 
 
-async def check_download_path(*, encrypted_id: str, upload_id: str, checksum: str):
+async def check_download_path(*, encrypted_id: str, checksum: str):
     """Check correct state for download path"""
     event_recorder = EventRecorder(
         kafka_servers=CONFIG.kafka_servers, topic="file_downloads"
@@ -73,12 +67,35 @@ async def check_download_path(*, encrypted_id: str, upload_id: str, checksum: st
         download_file(file_id=encrypted_id, output_dir=BASE_DIR / "example_data")
 
     payload = event_schemas.FileDownloadServed(
-        file_id=encrypted_id, decrypted_sha256=checksum, context="unkown"
-    ).json()
+        file_id=encrypted_id, decrypted_sha256=checksum, context="unknown"
+    ).dict()
     type_ = "download_served"
     key = encrypted_id
     expected_event = ExpectedEvent(payload=payload, type_=type_, key=key)
 
+    recorded_events = [
+        event for event in event_recorder.recorded_events if event.type_ == type_
+    ]
+
     check_recorded_events(
-        recorded_events=event_recorder.recorded_events, expected_events=[expected_event]
+        recorded_events=recorded_events,
+        expected_events=[expected_event, expected_event],
     )
+
+
+def decrypt_and_check(encrypted_id: str, content: bytes):
+    """Decrypt file and compare to original"""
+
+    encrypted_location = BASE_DIR / "example_data" / encrypted_id
+    decrypted_location = BASE_DIR / "example_data" / f"{encrypted_id}_decrypted"
+
+    decrypt_file(input_location=encrypted_location, output_location=decrypted_location)
+
+    with decrypted_location.open("rb") as dl_file:
+        downloaded_content = dl_file.read()
+
+    # cleanup
+    encrypted_location.unlink()
+    decrypted_location.unlink()
+
+    assert downloaded_content == content

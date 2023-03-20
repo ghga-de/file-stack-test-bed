@@ -52,7 +52,7 @@ services:
       - "8081:8081"
 
   ekss:
-    image: ghga/encryption-key-store-service:0.0.0-22-4d92c54-main
+    image: ghga/encryption-key-store-service:0.0.0-23-8055b62-main
     depends_on:
       - vault
     environment:
@@ -66,7 +66,7 @@ services:
       EKSS_SERVER_PRIVATE_KEY: G8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
       EKSS_SERVER_PUBLIC_KEY: qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=
   irs:
-    image: ghga/interrogation-room-service:0.0.0-19-f87dd1b-main
+    image: ghga/interrogation-room-service:0.0.0-20-428e6a8-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -97,7 +97,7 @@ services:
       - 44441:27017
 
   ucs_consumer:
-    image: ghga/upload-controller-service:0.3.0-18-g0b8060e-main
+    image: ghga/upload-controller-service:0.3.0-19-ge22e965-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -123,7 +123,7 @@ services:
     command: "consume-events"
 
   ucs_rest:
-    image: ghga/upload-controller-service:0.3.0-18-g0b8060e-main
+    image: ghga/upload-controller-service:0.3.0-19-ge22e965-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -151,7 +151,7 @@ services:
     command: "run-rest"
 
   dcs_consumer:
-    image: ghga/download-controller-service:0.4.0-15-ga1e2a15-main
+    image: ghga/download-controller-service:0.4.0-17-gd050908-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -181,7 +181,7 @@ services:
     command: "consume-events"
 
   dcs_rest:
-    image: ghga/download-controller-service:0.4.0-15-ga1e2a15-main
+    image: ghga/download-controller-service:0.4.0-17-gd050908-main
     depends_on:
       kafka:
         condition: service_healthy
@@ -212,7 +212,7 @@ services:
       DCS_PRESIGNED_URL_EXPIRES_AFTER: 30
     command: "run-rest"
   ifrs:
-    image: ghga/internal-file-registry-service:0.3.0-20-g82f39eb-main
+    image: ghga/internal-file-registry-service:0.3.0-21-g98eef83-main
     restart: unless-stopped
     depends_on:
       kafka:
@@ -227,7 +227,7 @@ services:
       IFRS_FILES_TO_REGISTER_TOPIC: file_interrogation
       IFRS_FILES_TO_REGISTER_TYPE: file_validation_success
       IFRS_FILES_TO_STAGE_TOPIC: file_downloads
-      IFRS_FILES_TO_STAGE_TYPE: file_Stage_requested
+      IFRS_FILES_TO_STAGE_TYPE: unstaged_download_requested
       IFRS_OUTBOX_BUCKET: outbox
       IFRS_INBOX_BUCKET: inbox
       IFRS_STAGING_BUCKET: staging

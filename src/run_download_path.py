@@ -12,9 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Functionality for file downloading"""
+
 
 from pathlib import Path
 
+import crypt4gh
+import crypt4gh.keys
+import crypt4gh.lib
 from ghga_connector.cli import download
 
 from src.commons import BASE_DIR
@@ -27,3 +32,17 @@ def download_file(file_id: str, output_dir: Path):
         output_dir=output_dir,
         pubkey_path=BASE_DIR / "example_data" / "key.pub",
     )
+
+
+def decrypt_file(input_location: Path, output_location: Path):
+    """Decrypt file"""
+    private_key = crypt4gh.keys.get_private_key(
+        filepath=BASE_DIR / "example_data" / "key.sec", callback=lambda: None
+    )
+    decryption_keys = [(0, private_key, None)]
+
+    with input_location.open("rb") as encrypted:
+        with output_location.open("wb") as decrypted:
+            crypt4gh.lib.decrypt(
+                keys=decryption_keys, infile=encrypted, outfile=decrypted
+            )
