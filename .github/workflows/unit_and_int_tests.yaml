@@ -17,12 +17,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt && \
-          pip install --upgrade -r requirements-dev.txt
-
-      - name: Run pytest
-        run: |
           docker exec \
             --workdir /workspace \
-            devcontainer_app_1 \
+            pip install -r requirements.txt && \
+            pip install --upgrade -r requirements-dev.txt && \
             pytest
