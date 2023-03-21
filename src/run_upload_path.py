@@ -32,7 +32,7 @@ from ghga_event_schemas import pydantic_ as event_schemas
 from hexkit.providers.akafka import KafkaEventPublisher
 from hexkit.providers.s3 import S3ObjectStorage
 
-from src.commons import BASE_DIR, CONFIG, FILE_SIZE
+from src.commons import CONFIG, DATA_DIR, FILE_SIZE
 
 
 class NamedBinaryIO(ABC, BinaryIO):
@@ -82,7 +82,7 @@ def generate_file():
         with NamedTemporaryFile() as encrypted_file:
             random_data.seek(0)
             private_key = crypt4gh.keys.get_private_key(
-                filepath=BASE_DIR / "example_data" / "key.sec", callback=lambda: None
+                filepath=DATA_DIR / "key.sec", callback=lambda: None
             )
             pub_key = base64.b64decode("qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=")
             encryption_keys = [(0, private_key, pub_key)]
@@ -128,7 +128,7 @@ async def populate_metadata_and_upload(
         upload(
             file_id=file_id,
             file_path=tmp_file.name,
-            pubkey_path=BASE_DIR / "example_data" / "key.pub",
+            pubkey_path=DATA_DIR / "key.pub",
         )
 
 

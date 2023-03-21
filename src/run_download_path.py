@@ -22,7 +22,7 @@ import crypt4gh.keys
 import crypt4gh.lib
 from ghga_connector.cli import download
 
-from src.commons import BASE_DIR
+from src.commons import DATA_DIR
 
 
 def download_file(file_id: str, output_dir: Path):
@@ -30,14 +30,14 @@ def download_file(file_id: str, output_dir: Path):
     download(
         file_id=file_id,
         output_dir=output_dir,
-        pubkey_path=BASE_DIR / "example_data" / "key.pub",
+        pubkey_path=DATA_DIR / "key.pub",
     )
 
 
 def decrypt_file(input_location: Path, output_location: Path):
     """Decrypt file"""
     private_key = crypt4gh.keys.get_private_key(
-        filepath=BASE_DIR / "example_data" / "key.sec", callback=lambda: None
+        filepath=DATA_DIR / "key.sec", callback=lambda: None
     )
     decryption_keys = [(0, private_key, None)]
 
