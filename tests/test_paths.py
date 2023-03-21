@@ -16,6 +16,7 @@
 """A test dummy just to make the CI pass."""
 
 import time
+from pathlib import Path
 
 import pytest
 from ghga_connector.cli import config
@@ -27,22 +28,23 @@ from hexkit.providers.akafka.testutils import (
     check_recorded_events,
 )
 
-from src.commons import CONFIG, TEST_DIR
+from src.commons import CONFIG
 from src.run_download_path import decrypt_file, download_file
 from src.run_upload_path import delegate_paths
 
 
 @pytest.mark.asyncio
-async def test_full_path():
+async def test_full_path(tmp_path):
     """Test up- and download path"""
-    if not TEST_DIR.exists():
-        TEST_DIR.mkdir(parents=True)
     unencrypted_id, encrypted_id, unencrypted_data, checksum = await delegate_paths()
 
     await check_upload_path(unencrypted_id=unencrypted_id, encrypted_id=encrypted_id)
-    await check_download_path(encrypted_id=encrypted_id, checksum=checksum)
-    decrypt_and_check(encrypted_id=encrypted_id, content=unencrypted_data)
-    TEST_DIR.rmdir()
+    await check_download_path(
+        encrypted_id=encrypted_id, checksum=checksum, output_dir=tmp_path
+    )
+    decrypt_and_check(
+        encrypted_id=encrypted_id, content=unencrypted_data, tmp_dir=tmp_path
+    )
 
 
 async def check_upload_path(*, unencrypted_id: str, encrypted_id: str):
@@ -61,14 +63,17 @@ async def check_upload_status(*, file_id: str, expected_status: str):
     assert upload_attempt["status"] == expected_status
 
 
-async def check_download_path(*, encrypted_id: str, checksum: str):
+async def check_download_path(*, encrypted_id: str, checksum: str, output_dir: Path):
     """Check correct state for download path"""
+
+    # record download_served event
     event_recorder = EventRecorder(
         kafka_servers=CONFIG.kafka_servers, topic="file_downloads"
     )
     async with event_recorder:
-        download_file(file_id=encrypted_id, output_dir=TEST_DIR)
+        download_file(file_id=encrypted_id, output_dir=output_dir)
 
+    # construct expected event
     payload = event_schemas.FileDownloadServed(
         file_id=encrypted_id, decrypted_sha256=checksum, context="unknown"
     ).dict()
@@ -76,6 +81,7 @@ async def check_download_path(*, encrypted_id: str, checksum: str):
     key = encrypted_id
     expected_event = ExpectedEvent(payload=payload, type_=type_, key=key)
 
+    # filter for relevant event type
     recorded_events = [
         event for event in event_recorder.recorded_events if event.type_ == type_
     ]
@@ -86,11 +92,11 @@ async def check_download_path(*, encrypted_id: str, checksum: str):
     )
 
 
-def decrypt_and_check(encrypted_id: str, content: bytes):
+def decrypt_and_check(encrypted_id: str, content: bytes, tmp_dir: Path):
     """Decrypt file and compare to original"""
 
-    encrypted_location = TEST_DIR / encrypted_id
-    decrypted_location = TEST_DIR / f"{encrypted_id}_decrypted"
+    encrypted_location = tmp_dir / encrypted_id
+    decrypted_location = tmp_dir / f"{encrypted_id}_decrypted"
 
     decrypt_file(input_location=encrypted_location, output_location=decrypted_location)
 

@@ -24,7 +24,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          docker exec -u root\
+          docker exec \
             --workdir /workspace \
             file_stack \
             pytest
