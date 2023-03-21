@@ -13,17 +13,17 @@ jobs:
       - id: common
         uses: ghga-de/gh-action-common@v2
 
+      - name: Install Dependencies
+        run: |
+          docker exec \
+            --workdir /workspace \
+            devcontainer_app_1 \
+            sudo pip install -r requirements.txt && \
+            sudo pip install -r requirements-dev.txt
+
       - name: Run pytest
         run: |
-          export ${{ steps.common.outputs.CONFIG_YAML_ENV_VAR_NAME }}="${{ steps.common.outputs.CONFIG_YAML }}"
-          pytest \
-            --cov="${{ steps.common.outputs.MAIN_SRC_DIR }}" \
-            --cov-report=xml
-
-      - id: coveralls
-        name: Upload coverage to coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pip install --upgrade coveralls
-          coveralls --service=github
+          docker exec \
+            --workdir /workspace \
+            devcontainer_app_1 \
+            pytest
