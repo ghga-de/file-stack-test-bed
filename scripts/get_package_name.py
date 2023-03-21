@@ -20,7 +20,7 @@
 
 def get_package_name() -> str:
     """Extracts the package name"""
-    return "File stack testbed"
+    return "src"
 
 
 def run():

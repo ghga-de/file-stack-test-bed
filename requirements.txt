@@ -1,5 +1,5 @@
 # All your requirements go here. Please adapt as needed:
 ghga-event-schemas==0.8.0
+ghga-connector[dev]==0.2.12
 hexkit[akafka,s3,mongodb]==0.9.2
-ghga-connector[dev]==0.2.10
 crypt4gh==1.6
