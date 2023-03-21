@@ -18,22 +18,45 @@ import asyncio
 import base64
 import hashlib
 import os
-import sys
 import time
+from abc import ABC
+from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
+from typing import BinaryIO, Generator, cast
 
 import crypt4gh.header
 import crypt4gh.keys
 import crypt4gh.lib
 from ghga_connector.cli import upload
 from ghga_event_schemas import pydantic_ as event_schemas
-from ghga_service_chassis_lib.utils import big_temp_file
 from hexkit.providers.akafka import KafkaEventPublisher
 from hexkit.providers.s3 import S3ObjectStorage
 
 from src.commons import BASE_DIR, CONFIG, FILE_SIZE
 
-sys.set_int_max_str_digits(FILE_SIZE)
+
+class NamedBinaryIO(ABC, BinaryIO):
+    """Return type of NamedTemporaryFile."""
+
+    name: str
+
+
+@contextmanager
+def big_temp_file(size: int) -> Generator[NamedBinaryIO, None, None]:
+    """Generates a big file with approximately the specified size in bytes."""
+    current_size = 0
+    current_number = 0
+    next_number = 1
+    with NamedTemporaryFile("w+b") as temp_file:
+        while current_size <= size:
+            byte_addition = f"{current_number}\n".encode("ASCII")
+            current_size += len(byte_addition)
+            temp_file.write(byte_addition)
+            previous_number = current_number
+            current_number = next_number
+            next_number = previous_number + current_number
+        temp_file.flush()
+        yield cast(NamedBinaryIO, temp_file)
 
 
 async def delegate_paths():
