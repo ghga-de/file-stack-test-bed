@@ -29,8 +29,8 @@ from hexkit.providers.akafka.testutils import (
 )
 
 from src.commons import CONFIG
-from src.run_download_path import decrypt_file, download_file
-from src.run_upload_path import delegate_paths
+from src.download_path import decrypt_file, download_file
+from src.upload_path import delegate_paths
 
 
 @pytest.mark.asyncio
