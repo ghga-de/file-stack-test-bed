@@ -27,7 +27,7 @@ from hexkit.providers.akafka.testutils import (
     check_recorded_events,
 )
 
-from src.commons import BASE_DIR, CONFIG
+from src.commons import CONFIG, TEST_DIR
 from src.run_download_path import decrypt_file, download_file
 from src.run_upload_path import delegate_paths
 
@@ -35,11 +35,14 @@ from src.run_upload_path import delegate_paths
 @pytest.mark.asyncio
 async def test_full_path():
     """Test up- and download path"""
+    if not TEST_DIR.exists():
+        TEST_DIR.mkdir(parents=True)
     unencrypted_id, encrypted_id, unencrypted_data, checksum = await delegate_paths()
 
     await check_upload_path(unencrypted_id=unencrypted_id, encrypted_id=encrypted_id)
     await check_download_path(encrypted_id=encrypted_id, checksum=checksum)
     decrypt_and_check(encrypted_id=encrypted_id, content=unencrypted_data)
+    TEST_DIR.rmdir()
 
 
 async def check_upload_path(*, unencrypted_id: str, encrypted_id: str):
@@ -64,7 +67,7 @@ async def check_download_path(*, encrypted_id: str, checksum: str):
         kafka_servers=CONFIG.kafka_servers, topic="file_downloads"
     )
     async with event_recorder:
-        download_file(file_id=encrypted_id, output_dir=BASE_DIR / "example_data")
+        download_file(file_id=encrypted_id, output_dir=TEST_DIR)
 
     payload = event_schemas.FileDownloadServed(
         file_id=encrypted_id, decrypted_sha256=checksum, context="unknown"
@@ -86,8 +89,8 @@ async def check_download_path(*, encrypted_id: str, checksum: str):
 def decrypt_and_check(encrypted_id: str, content: bytes):
     """Decrypt file and compare to original"""
 
-    encrypted_location = BASE_DIR / "example_data" / encrypted_id
-    decrypted_location = BASE_DIR / "example_data" / f"{encrypted_id}_decrypted"
+    encrypted_location = TEST_DIR / encrypted_id
+    decrypted_location = TEST_DIR / f"{encrypted_id}_decrypted"
 
     decrypt_file(input_location=encrypted_location, output_location=decrypted_location)
 

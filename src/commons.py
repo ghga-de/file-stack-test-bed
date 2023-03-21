@@ -35,5 +35,6 @@ class Config(S3Config, KafkaConfig):
 
 
 BASE_DIR = Path(__file__).parent.parent
+TEST_DIR = BASE_DIR / "test_data"
 CONFIG = Config()
 FILE_SIZE = 20 * 1024**2
