@@ -10,9 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: common
-        uses: ghga-de/gh-action-common@v2
-
       - name: Set up containers
         run: |
           docker-compose -f .devcontainer/docker-compose.yml up -d
