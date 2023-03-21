@@ -44,13 +44,6 @@ services:
       TB_KAFKA_SERVERS: '["kafka:9092"]'
       TB_SERVICE_NAME: testbed_kafka
 
-  mongo-express:
-    image: mongo-express
-    environment:
-      ME_CONFIG_MONGODB_URL: mongodb://testbed_user:testbed_key@mongo_db
-    ports:
-      - "8081:8081"
-
   ekss:
     image: ghga/encryption-key-store-service:0.0.0-23-8055b62-main
     depends_on:
