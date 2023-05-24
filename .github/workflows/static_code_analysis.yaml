@@ -12,7 +12,7 @@ jobs:
       - id: common
         uses: ghga-de/gh-action-common@v2
 
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3
         env:
           SKIP: no-commit-to-branch
       - name: black
