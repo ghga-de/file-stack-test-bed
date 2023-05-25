@@ -59,13 +59,13 @@ services:
       EKSS_VAULT_SECRET_ID: a3e80b1d-86d3-4c23-85ee-589031ec2cba
       EKSS_SERVER_PRIVATE_KEY: G8oJdJ0zEEGD/ZKqhBdJSLKHM1/MO8XqUNSYpL0xyv0=
       EKSS_SERVER_PUBLIC_KEY: qx5g31H7rdsq7sgkew9ElkLIXvBje4RxDVcAHcJD8XY=
+
   irs:
     image: ghga/interrogation-room-service:0.0.0-20-428e6a8-main
     restart: unless-stopped
     depends_on:
       kafka:
         condition: service_healthy
-
     environment:
       IRS_S3_ENDPOINT_URL: http://localstack:4566
       IRS_S3_ACCESS_KEY_ID: testbed-key
@@ -205,6 +205,7 @@ services:
       DCS_EKSS_BASE_URL: http://ekss
       DCS_PRESIGNED_URL_EXPIRES_AFTER: 30
     command: "run-rest"
+
   ifrs:
     image: ghga/internal-file-registry-service:0.3.0-21-g98eef83-main
     restart: unless-stopped
@@ -257,17 +258,14 @@ services:
       - 9092:9092
 
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:2.0.2
     environment:
       SERVICES: s3
-      DEFAULT_REGION: eu-west-1
       AWS_DEFAULT_REGION: eu-west-1
-      # accessible at localhost
-      HOSTNAME_EXTERNAL: localhost
+      LOCALSTACK_HOST: localhost
       AWS_ACCESS_KEY_ID: testbed-key
       AWS_SECRET_ACCESS_KEY: testbed-secret
-      USE_SSL: "false"
-      DATA_DIR: /var/lib/localstack/data
+      PERSISTENCE: 1
       DEBUG: 1
     volumes:
       - type: volume
@@ -275,7 +273,8 @@ services:
         target: /var/lib/localstack
         volume:
           nocopy: true
-      - ./init-scripts/localstack:/docker-entrypoint-initaws.d
+      - ./init-scripts/localstack:/etc/localstack/init/ready.d
+
   vault:
     image: hashicorp/vault:1.12
     ports:
@@ -301,5 +300,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+
 volumes:
   s3_fs: {}
